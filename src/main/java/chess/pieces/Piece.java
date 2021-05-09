@@ -37,6 +37,8 @@ public abstract class Piece {
 		getImageView().setDragListener(dragListener);
 	}
 
+	public abstract Piece copy();
+
 	@Override
 	public String toString() {
 		return getClass().getSimpleName() + "{" +

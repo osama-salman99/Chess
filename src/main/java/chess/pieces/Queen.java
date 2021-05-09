@@ -32,4 +32,9 @@ public class Queen extends Piece {
 	public boolean validMovement(ChessPosition destinationPosition) {
 		return false;
 	}
+
+	@Override
+	public Piece copy() {
+		return new Queen(color, position);
+	}
 }

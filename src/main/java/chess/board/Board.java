@@ -13,6 +13,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Board {
 	@SuppressWarnings("SpellCheckingInspection")
@@ -237,7 +238,49 @@ public class Board {
 	}
 
 	public boolean kingInCheck(Piece piece, ChessPosition destinationPosition) {
-		// TODO: Check king if in check
+		List<Piece> mockPieces = new ArrayList<>(pieces);
+		mockPieces.remove(piece);
+		Piece copyPiece = piece.copy();
+		copyPiece.setPosition(destinationPosition);
+		mockPieces.add(copyPiece);
+		King king = null;
+		for (Piece mockPiece : mockPieces) {
+			if (mockPiece.getColor() == turn && mockPiece instanceof King) {
+				king = (King) mockPiece;
+			}
+		}
+		if (king == null) {
+			throw new RuntimeException("No king found");
+		}
+		for (Piece mockPiece : mockPieces) {
+			if (mockPiece.getColor() == turn) {
+				continue;
+			}
+			if (mockPiece instanceof King || mockPiece instanceof Knight) {
+				if (mockPiece.validMovement(king.getPosition())) {
+					return true;
+				}
+			} else if (mockPiece instanceof Pawn) {
+				int takeFileRight = piece.getPosition().getFile() + 1;
+				int takeFileLeft = piece.getPosition().getFile() - 1;
+				int takeRank;
+				int kingFile = king.getPosition().getFile();
+				if (mockPiece.getColor() == Piece.PieceColor.WHITE) {
+					takeRank = piece.getPosition().getRank() + 1;
+				} else {
+					takeRank = piece.getPosition().getRank() - 1;
+				}
+				if (king.getPosition().getRank() == takeRank) {
+					if (kingFile == takeFileRight || kingFile == takeFileLeft) {
+						return true;
+					}
+				}
+			} else {
+				if (mockPiece.validMovement(king.getPosition()) && emptyPath(mockPiece.getPosition(), king.getPosition())) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 }

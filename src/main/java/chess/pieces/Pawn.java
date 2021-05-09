@@ -67,6 +67,11 @@ public class Pawn extends Piece {
 		return piece;
 	}
 
+	@Override
+	public Piece copy() {
+		return new Pawn(color, position);
+	}
+
 	public enum Promotion {
 		Queen, Rook, Knight, Bishop
 	}
