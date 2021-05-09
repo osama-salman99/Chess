@@ -261,14 +261,14 @@ public class Board {
 					return true;
 				}
 			} else if (mockPiece instanceof Pawn) {
-				int takeFileRight = piece.getPosition().getFile() + 1;
-				int takeFileLeft = piece.getPosition().getFile() - 1;
+				int takeFileRight = mockPiece.getPosition().getFile() + 1;
+				int takeFileLeft = mockPiece.getPosition().getFile() - 1;
 				int takeRank;
 				int kingFile = king.getPosition().getFile();
 				if (mockPiece.getColor() == Piece.PieceColor.WHITE) {
-					takeRank = piece.getPosition().getRank() + 1;
+					takeRank = mockPiece.getPosition().getRank() + 1;
 				} else {
-					takeRank = piece.getPosition().getRank() - 1;
+					takeRank = mockPiece.getPosition().getRank() - 1;
 				}
 				if (king.getPosition().getRank() == takeRank) {
 					if (kingFile == takeFileRight || kingFile == takeFileLeft) {
