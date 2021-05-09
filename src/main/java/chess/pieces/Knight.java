@@ -30,7 +30,9 @@ public class Knight extends Piece {
 
 	@Override
 	public boolean validMovement(ChessPosition destinationPosition) {
-		return false;
+		int fileDifference = Math.abs(destinationPosition.getFile() - position.getFile());
+		int rankDifference = Math.abs(destinationPosition.getRank() - position.getRank());
+		return (fileDifference == 2 && rankDifference == 1) || (fileDifference == 1 && rankDifference == 2);
 	}
 
 	@Override

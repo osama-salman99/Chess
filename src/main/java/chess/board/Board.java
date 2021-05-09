@@ -110,7 +110,7 @@ public class Board {
 
 	public void makeMove(Piece piece, ChessPosition destinationPosition) {
 		if (isLegal(piece, destinationPosition)) {
-			pieces.remove(getOccupyingPiece(destinationPosition));
+			pieces.remove(getOccupyingPiece(destinationPosition, pieces));
 			piece.setPosition(destinationPosition);
 			turn = turn == Piece.PieceColor.WHITE ? Piece.PieceColor.BLACK : Piece.PieceColor.WHITE;
 			if (piece instanceof Pawn) {
@@ -129,7 +129,7 @@ public class Board {
 		if (piece.getColor() != turn || !piece.validMovement(destinationPosition)) {
 			return false;
 		}
-		Piece occupyingPiece = getOccupyingPiece(destinationPosition);
+		Piece occupyingPiece = getOccupyingPiece(destinationPosition, pieces);
 		if (piece instanceof Pawn) {
 			ChessPosition position = piece.getPosition();
 			int rank = position.getRank();
@@ -142,25 +142,30 @@ public class Board {
 			}
 			if (rankDifference == 2) {
 				if (rank != 2 || fileDifference != 0) {
+					System.out.println("Invalid two-square pawn move");
 					return false;
 				}
 			}
 			if (fileDifference == 0) {
 				if (occupyingPiece != null) {
+					System.out.println("Square is occupied");
 					return false;
 				}
 			} else {
 				if (occupyingPiece == null) {
+					System.out.println("No piece to take");
 					return false;
 				}
 			}
 		}
 		// Check if player is taking their own pieces
 		if (occupyingPiece != null && occupyingPiece.getColor() == turn) {
+			System.out.println("Player is taking their own piece");
 			return false;
 		}
 		if (!(piece instanceof Knight)) {
-			if (!emptyPath(piece.getPosition(), destinationPosition)) {
+			if (!emptyPath(piece.getPosition(), destinationPosition, pieces)) {
+				System.out.println("Path is not empty");
 				return false;
 			}
 		}
@@ -187,7 +192,7 @@ public class Board {
 		}
 	}
 
-	public Piece getOccupyingPiece(ChessPosition position) {
+	public Piece getOccupyingPiece(ChessPosition position, List<Piece> pieces) {
 		for (Piece piece : pieces) {
 			if (piece.getPosition().equals(position)) {
 				return piece;
@@ -196,7 +201,7 @@ public class Board {
 		return null;
 	}
 
-	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition) {
+	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition, List<Piece> pieces) {
 		int rankDifference = destinationPosition.getRank() - startingPosition.getRank();
 		int fileDifference = destinationPosition.getFile() - startingPosition.getFile();
 		if (rankDifference == 0) {
@@ -205,7 +210,7 @@ public class Board {
 			int minFile = Math.min(startingPosition.getFile(), destinationPosition.getFile());
 			int maxFile = Math.max(startingPosition.getFile(), destinationPosition.getFile());
 			for (int file = minFile + 1; file < maxFile; file++) {
-				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
 					return false;
 				}
 			}
@@ -216,7 +221,7 @@ public class Board {
 			int minRank = Math.min(startingPosition.getRank(), destinationPosition.getRank());
 			int maxRank = Math.max(startingPosition.getRank(), destinationPosition.getRank());
 			for (int rank = minRank + 1; rank < maxRank; rank++) {
-				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
 					return false;
 				}
 			}
@@ -226,10 +231,10 @@ public class Board {
 			int difference = Math.abs(rankDifference);
 			int rankIncrement = rankDifference > 0 ? 1 : -1;
 			int fileIncrement = fileDifference > 0 ? 1 : -1;
-			for (int i = 1, file = startingPosition.getFile() + 1, rank = startingPosition.getRank() + 1;
+			for (int i = 1, file = startingPosition.getFile() + fileIncrement, rank = startingPosition.getRank() + rankIncrement;
 				 i < difference - 1;
 				 i++, file += fileIncrement, rank += rankIncrement) {
-				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
 					return false;
 				}
 			}
@@ -258,6 +263,11 @@ public class Board {
 			}
 			if (mockPiece instanceof King || mockPiece instanceof Knight) {
 				if (mockPiece.validMovement(king.getPosition())) {
+					if (mockPiece instanceof Knight) {
+						System.out.println("King in check by a knight");
+					} else {
+						System.out.println("King in check by the other king");
+					}
 					return true;
 				}
 			} else if (mockPiece instanceof Pawn) {
@@ -272,11 +282,14 @@ public class Board {
 				}
 				if (king.getPosition().getRank() == takeRank) {
 					if (kingFile == takeFileRight || kingFile == takeFileLeft) {
+						System.out.println("King in check by pawn");
 						return true;
 					}
 				}
 			} else {
-				if (mockPiece.validMovement(king.getPosition()) && emptyPath(mockPiece.getPosition(), king.getPosition())) {
+				if (mockPiece.validMovement(king.getPosition())
+						&& emptyPath(mockPiece.getPosition(), king.getPosition(), mockPieces)) {
+					System.out.println("King in check by " + mockPiece.getClass().getName());
 					return true;
 				}
 			}

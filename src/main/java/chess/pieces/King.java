@@ -30,7 +30,12 @@ public class King extends Piece {
 
 	@Override
 	public boolean validMovement(ChessPosition destinationPosition) {
-		return false;
+		int fileDifference = Math.abs(destinationPosition.getFile() - position.getFile());
+		int rankDifference = Math.abs(destinationPosition.getRank() - position.getRank());
+		if (fileDifference == 0 && rankDifference == 0) {
+			return false;
+		}
+		return fileDifference <= 1 && rankDifference <= 1;
 	}
 
 	@Override
