@@ -33,6 +33,7 @@ public class MouseEventHandler implements EventHandler<MouseEvent> {
 		if (dragListener == null) {
 			return;
 		}
+		node.toFront();
 		if (event.getEventType() == MouseEvent.MOUSE_ENTERED) {
 			node.setCursor(Cursor.OPEN_HAND);
 		} else if (event.getEventType() == MouseEvent.MOUSE_EXITED) {

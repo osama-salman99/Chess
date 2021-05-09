@@ -30,16 +30,17 @@ public class Pawn extends Piece {
 	}
 
 	@Override
-	public boolean validMovement(ChessPosition nextChessPosition) {
-		int fileDifference = Math.abs(nextChessPosition.getFile() - position.getFile());
-		int rankDifference = nextChessPosition.getRank() - position.getRank();
-		if (color == PieceColor.WHITE) {
-			return fileDifference >= 0 && fileDifference <= 1
-					&& (rankDifference == 1);
-		} else {
-			return fileDifference >= 0 && fileDifference <= 1
-					&& (rankDifference == -1);
+	public boolean validMovement(ChessPosition destinationPosition) {
+		int fileDifference = Math.abs(destinationPosition.getFile() - position.getFile());
+		int rankDifference = destinationPosition.getRank() - position.getRank();
+		if (color == PieceColor.BLACK) {
+			rankDifference *= -1;
 		}
+		if (fileDifference == 0 && rankDifference == 2) {
+			return true;
+		}
+		return fileDifference >= 0 && fileDifference <= 1
+				&& (rankDifference == 1);
 	}
 
 	public Piece promote(Promotion promotion, ChessPosition position) {
@@ -60,7 +61,7 @@ public class Pawn extends Piece {
 			default:
 				throw new IllegalArgumentException("Unknown argument " + promotion);
 		}
-		PieceDragListener dragListener = (PieceDragListener) piece.getDragListener();
+		PieceDragListener dragListener = (PieceDragListener) getDragListener();
 		dragListener.setPiece(piece);
 		piece.setDragListener(dragListener);
 		return piece;

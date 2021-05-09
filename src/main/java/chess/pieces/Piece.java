@@ -25,7 +25,7 @@ public abstract class Piece {
 		this.position = chessPosition;
 	}
 
-	public abstract boolean validMovement(ChessPosition nextChessPosition);
+	public abstract boolean validMovement(ChessPosition destinationPosition);
 
 	public abstract DraggableImageView getImageView();
 

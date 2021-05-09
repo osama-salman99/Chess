@@ -108,14 +108,62 @@ public class Board {
 	}
 
 	public void makeMove(Piece piece, ChessPosition destinationPosition) {
-		if (piece.getColor() != turn || !piece.validMovement(destinationPosition)) {
-			refreshBoard();
-			return;
+		if (isLegal(piece, destinationPosition)) {
+			pieces.remove(getOccupyingPiece(destinationPosition));
+			piece.setPosition(destinationPosition);
+			turn = turn == Piece.PieceColor.WHITE ? Piece.PieceColor.BLACK : Piece.PieceColor.WHITE;
+			if (piece instanceof Pawn) {
+				int destinationRank = destinationPosition.getRank();
+				if (destinationRank == 8 || destinationRank == 1) {
+					pieces.remove(piece);
+					// TODO: Ask user for promotion piece
+					pieces.add(((Pawn) piece).promote(Pawn.Promotion.Queen, destinationPosition));
+				}
+			}
 		}
-		// TODO: Check if move is legal and do it
-		piece.setPosition(destinationPosition);
-		turn = turn == Piece.PieceColor.WHITE ? Piece.PieceColor.BLACK : Piece.PieceColor.WHITE;
 		refreshBoard();
+	}
+
+	public boolean isLegal(Piece piece, ChessPosition destinationPosition) {
+		if (piece.getColor() != turn || !piece.validMovement(destinationPosition)) {
+			return false;
+		}
+		Piece occupyingPiece = getOccupyingPiece(destinationPosition);
+		if (piece instanceof Pawn) {
+			ChessPosition position = piece.getPosition();
+			int rank = position.getRank();
+			int destinationRank = destinationPosition.getRank();
+			int rankDifference = destinationRank - rank;
+			int fileDifference = Math.abs(destinationPosition.getFile() - position.getFile());
+			if (piece.getColor() == Piece.PieceColor.BLACK) {
+				rank = 9 - position.getRank();
+				rankDifference *= -1;
+			}
+			if (rankDifference == 2) {
+				if (rank != 2 || fileDifference != 0) {
+					return false;
+				}
+			}
+			if (fileDifference == 0) {
+				if (occupyingPiece != null) {
+					return false;
+				}
+			} else {
+				if (occupyingPiece == null) {
+					return false;
+				}
+			}
+		}
+		// Check if player is taking their own pieces
+		if (occupyingPiece != null && occupyingPiece.getColor() == turn) {
+			return false;
+		}
+		if (!(piece instanceof Knight)) {
+			if (!emptyPath(piece.getPosition(), destinationPosition)) {
+				return false;
+			}
+		}
+		return !kingInCheck(piece, destinationPosition);
 	}
 
 	public void refreshBoard() {
@@ -136,5 +184,60 @@ public class Board {
 			ChessPosition position = piece.getPosition();
 			boardGridPane.add(pieceImageView, (position.getFile() - 1), 7 - (position.getRank() - 1));
 		}
+	}
+
+	public Piece getOccupyingPiece(ChessPosition position) {
+		for (Piece piece : pieces) {
+			if (piece.getPosition().equals(position)) {
+				return piece;
+			}
+		}
+		return null;
+	}
+
+	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition) {
+		int rankDifference = destinationPosition.getRank() - startingPosition.getRank();
+		int fileDifference = destinationPosition.getFile() - startingPosition.getFile();
+		if (rankDifference == 0) {
+			// Horizontal
+			int rank = startingPosition.getRank();
+			int minFile = Math.min(startingPosition.getFile(), destinationPosition.getFile());
+			int maxFile = Math.max(startingPosition.getFile(), destinationPosition.getFile());
+			for (int file = minFile + 1; file < maxFile; file++) {
+				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+					return false;
+				}
+			}
+			return true;
+		} else if (fileDifference == 0) {
+			// Vertical
+			int file = startingPosition.getFile();
+			int minRank = Math.min(startingPosition.getRank(), destinationPosition.getRank());
+			int maxRank = Math.max(startingPosition.getRank(), destinationPosition.getRank());
+			for (int rank = minRank + 1; rank < maxRank; rank++) {
+				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			// Diagonal
+			int difference = Math.abs(rankDifference);
+			int rankIncrement = rankDifference > 0 ? 1 : -1;
+			int fileIncrement = fileDifference > 0 ? 1 : -1;
+			for (int i = 1, file = startingPosition.getFile() + 1, rank = startingPosition.getRank() + 1;
+				 i < difference - 1;
+				 i++, file += fileIncrement, rank += rankIncrement) {
+				if (getOccupyingPiece(new ChessPosition(file, rank)) != null) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+
+	public boolean kingInCheck(Piece piece, ChessPosition destinationPosition) {
+		// TODO: Check king if in check
+		return false;
 	}
 }

@@ -30,6 +30,15 @@ public class ChessPosition {
 	}
 
 	@Override
+	public boolean equals(Object object) {
+		if (!(object instanceof ChessPosition)) {
+			return false;
+		}
+		ChessPosition position = (ChessPosition) object;
+		return position.getRank() == getRank() && position.getFile() == getFile();
+	}
+
+	@Override
 	public String toString() {
 		return getChessNotation();
 	}

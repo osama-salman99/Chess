@@ -29,7 +29,7 @@ public class Bishop extends Piece {
 	}
 
 	@Override
-	public boolean validMovement(ChessPosition nextChessPosition) {
+	public boolean validMovement(ChessPosition destinationPosition) {
 		return false;
 	}
 }
