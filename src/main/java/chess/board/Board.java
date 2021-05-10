@@ -244,8 +244,7 @@ public class Board {
 
 	public boolean kingInCheck(Piece piece, ChessPosition destinationPosition) {
 		List<Piece> mockPieces = new ArrayList<>(pieces);
-		Piece occupyingPiece = getOccupyingPiece(destinationPosition, mockPieces);
-		mockPieces.remove(occupyingPiece);
+		mockPieces.remove(getOccupyingPiece(destinationPosition, mockPieces));
 		mockPieces.remove(piece);
 		Piece copyPiece = piece.copy();
 		copyPiece.setPosition(destinationPosition);
