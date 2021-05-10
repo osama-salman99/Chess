@@ -248,6 +248,8 @@ public class Board {
 		Piece copyPiece = piece.copy();
 		copyPiece.setPosition(destinationPosition);
 		mockPieces.add(copyPiece);
+		Piece occupyingPiece = getOccupyingPiece(destinationPosition, mockPieces);
+		mockPieces.remove(occupyingPiece);
 		King king = null;
 		for (Piece mockPiece : mockPieces) {
 			if (mockPiece.getColor() == turn && mockPiece instanceof King) {
