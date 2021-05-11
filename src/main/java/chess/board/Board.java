@@ -18,7 +18,7 @@ import java.util.Map;
 public class Board {
 	@SuppressWarnings("SpellCheckingInspection")
 	private static final String NEW_GAME_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-	private final HashMap<ChessPosition, Piece> pieces;
+	private final HashMap<String, Piece> pieces;
 	private GridPane boardGridPane;
 	private Piece.PieceColor turn;
 
@@ -37,7 +37,7 @@ public class Board {
 
 	public static Board createChessBoard(String fen) throws InvalidFenException {
 		final Board board = new Board();
-		HashMap<ChessPosition, Piece> pieces = board.pieces;
+		HashMap<String, Piece> pieces = board.pieces;
 		int rank = 8;
 		int file = 1;
 		for (char c : fen.toCharArray()) {
@@ -97,7 +97,7 @@ public class Board {
 					}
 				}
 			});
-			pieces.put(piece.getPosition(), piece);
+			pieces.put(piece.getPosition().getChessNotation(), piece);
 			file++;
 		}
 		return board;
@@ -110,16 +110,18 @@ public class Board {
 
 	public void makeMove(Piece piece, ChessPosition destinationPosition) {
 		if (isLegal(piece, destinationPosition)) {
-			pieces.remove(destinationPosition);
+			pieces.remove(destinationPosition.getChessNotation());
+			pieces.remove(piece.getPosition().getChessNotation());
 			piece.setPosition(destinationPosition);
+			pieces.put(piece.getPosition().getChessNotation(), piece);
 			turn = turn == Piece.PieceColor.WHITE ? Piece.PieceColor.BLACK : Piece.PieceColor.WHITE;
 			if (piece instanceof Pawn) {
 				int destinationRank = destinationPosition.getRank();
 				if (destinationRank == 8 || destinationRank == 1) {
-					pieces.remove(piece.getPosition());
+					pieces.remove(piece.getPosition().getChessNotation());
 					// TODO: Ask user for promotion piece
 					Piece promotionPiece = ((Pawn) piece).promote(Pawn.Promotion.Queen, destinationPosition);
-					pieces.put(promotionPiece.getPosition(), promotionPiece);
+					pieces.put(promotionPiece.getPosition().getChessNotation(), promotionPiece);
 				}
 			}
 		}
@@ -130,7 +132,7 @@ public class Board {
 		if (piece.getColor() != turn || !piece.validMovement(destinationPosition)) {
 			return false;
 		}
-		Piece occupyingPiece = pieces.get(destinationPosition);
+		Piece occupyingPiece = pieces.get(destinationPosition.getChessNotation());
 		if (piece instanceof Pawn) {
 			ChessPosition position = piece.getPosition();
 			int rank = position.getRank();
@@ -184,7 +186,7 @@ public class Board {
 				boardGridPane.add(emptyCell, x, y);
 			}
 		}
-		for (Map.Entry<ChessPosition, Piece> pieceEntry : pieces.entrySet()) {
+		for (Map.Entry<String, Piece> pieceEntry : pieces.entrySet()) {
 			Piece piece = pieceEntry.getValue();
 			DraggableImageView pieceImageView = piece.getImageView();
 			pieceImageView.setFitWidth(sideLength);
@@ -195,7 +197,7 @@ public class Board {
 	}
 
 	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition,
-							  HashMap<ChessPosition, Piece> pieces) {
+							  HashMap<String, Piece> pieces) {
 		int rankDifference = destinationPosition.getRank() - startingPosition.getRank();
 		int fileDifference = destinationPosition.getFile() - startingPosition.getFile();
 		if (rankDifference == 0) {
@@ -204,7 +206,7 @@ public class Board {
 			int minFile = Math.min(startingPosition.getFile(), destinationPosition.getFile());
 			int maxFile = Math.max(startingPosition.getFile(), destinationPosition.getFile());
 			for (int file = minFile + 1; file < maxFile; file++) {
-				if (pieces.get(new ChessPosition(file, rank)) != null) {
+				if (pieces.get(new ChessPosition(file, rank).getChessNotation()) != null) {
 					return false;
 				}
 			}
@@ -215,7 +217,7 @@ public class Board {
 			int minRank = Math.min(startingPosition.getRank(), destinationPosition.getRank());
 			int maxRank = Math.max(startingPosition.getRank(), destinationPosition.getRank());
 			for (int rank = minRank + 1; rank < maxRank; rank++) {
-				if (pieces.get(new ChessPosition(file, rank)) != null) {
+				if (pieces.get(new ChessPosition(file, rank).getChessNotation()) != null) {
 					return false;
 				}
 			}
@@ -225,10 +227,12 @@ public class Board {
 			int difference = Math.abs(rankDifference);
 			int rankIncrement = rankDifference > 0 ? 1 : -1;
 			int fileIncrement = fileDifference > 0 ? 1 : -1;
-			for (int i = 1, file = startingPosition.getFile() + fileIncrement, rank = startingPosition.getRank() + rankIncrement;
-				 i < difference - 1;
+			for (int i = 1,
+				 file = startingPosition.getFile() + fileIncrement,
+				 rank = startingPosition.getRank() + rankIncrement;
+				 i < difference;
 				 i++, file += fileIncrement, rank += rankIncrement) {
-				if (pieces.get(new ChessPosition(file, rank)) != null) {
+				if (pieces.get(new ChessPosition(file, rank).getChessNotation()) != null) {
 					return false;
 				}
 			}
@@ -237,14 +241,14 @@ public class Board {
 	}
 
 	public boolean kingInCheck(Piece piece, ChessPosition destinationPosition) {
-		HashMap<ChessPosition, Piece> mockPieces = new HashMap<>(pieces);
-		mockPieces.remove(destinationPosition);
-		mockPieces.remove(piece.getPosition());
+		HashMap<String, Piece> mockPieces = new HashMap<>(pieces);
+		mockPieces.remove(destinationPosition.getChessNotation());
+		mockPieces.remove(piece.getPosition().getChessNotation());
 		Piece copyPiece = piece.copy();
 		copyPiece.setPosition(destinationPosition);
-		mockPieces.put(copyPiece.getPosition(), copyPiece);
+		mockPieces.put(copyPiece.getPosition().getChessNotation(), copyPiece);
 		King king = null;
-		for (Map.Entry<ChessPosition, Piece> pieceEntry : mockPieces.entrySet()) {
+		for (Map.Entry<String, Piece> pieceEntry : mockPieces.entrySet()) {
 			Piece mockPiece = pieceEntry.getValue();
 			if (mockPiece.getColor() == turn && mockPiece instanceof King) {
 				king = (King) mockPiece;
@@ -253,7 +257,7 @@ public class Board {
 		if (king == null) {
 			throw new RuntimeException("No king found");
 		}
-		for (Map.Entry<ChessPosition, Piece> pieceEntry : mockPieces.entrySet()) {
+		for (Map.Entry<String, Piece> pieceEntry : mockPieces.entrySet()) {
 			Piece mockPiece = pieceEntry.getValue();
 			if (mockPiece.getColor() == turn) {
 				continue;
