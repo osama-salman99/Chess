@@ -12,18 +12,20 @@ import javafx.scene.Node;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+// TODO: Change pieces from an ArrayList to a Matrix
 
 public class Board {
 	@SuppressWarnings("SpellCheckingInspection")
 	private static final String NEW_GAME_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-	private final ArrayList<Piece> pieces;
+	private final HashMap<ChessPosition, Piece> pieces;
 	private GridPane boardGridPane;
 	private Piece.PieceColor turn;
 
 	private Board() {
-		pieces = new ArrayList<>();
+		pieces = new HashMap<>();
 		turn = Piece.PieceColor.WHITE;
 	}
 
@@ -37,7 +39,7 @@ public class Board {
 
 	public static Board createChessBoard(String fen) throws InvalidFenException {
 		final Board board = new Board();
-		ArrayList<Piece> pieces = board.pieces;
+		HashMap<ChessPosition, Piece> pieces = board.pieces;
 		int rank = 8;
 		int file = 1;
 		for (char c : fen.toCharArray()) {
@@ -97,7 +99,7 @@ public class Board {
 					}
 				}
 			});
-			pieces.add(piece);
+			pieces.put(piece.getPosition(), piece);
 			file++;
 		}
 		return board;
@@ -110,15 +112,16 @@ public class Board {
 
 	public void makeMove(Piece piece, ChessPosition destinationPosition) {
 		if (isLegal(piece, destinationPosition)) {
-			pieces.remove(getOccupyingPiece(destinationPosition, pieces));
+			pieces.remove(destinationPosition);
 			piece.setPosition(destinationPosition);
 			turn = turn == Piece.PieceColor.WHITE ? Piece.PieceColor.BLACK : Piece.PieceColor.WHITE;
 			if (piece instanceof Pawn) {
 				int destinationRank = destinationPosition.getRank();
 				if (destinationRank == 8 || destinationRank == 1) {
-					pieces.remove(piece);
+					pieces.remove(piece.getPosition());
 					// TODO: Ask user for promotion piece
-					pieces.add(((Pawn) piece).promote(Pawn.Promotion.Queen, destinationPosition));
+					Piece promotionPiece = ((Pawn) piece).promote(Pawn.Promotion.Queen, destinationPosition);
+					pieces.put(promotionPiece.getPosition(), promotionPiece);
 				}
 			}
 		}
@@ -183,7 +186,8 @@ public class Board {
 				boardGridPane.add(emptyCell, x, y);
 			}
 		}
-		for (Piece piece : pieces) {
+		for (Map.Entry<ChessPosition, Piece> pieceEntry : pieces.entrySet()) {
+			Piece piece = pieceEntry.getValue();
 			DraggableImageView pieceImageView = piece.getImageView();
 			pieceImageView.setFitWidth(sideLength);
 			pieceImageView.setFitHeight(sideLength);
@@ -192,16 +196,12 @@ public class Board {
 		}
 	}
 
-	public Piece getOccupyingPiece(ChessPosition position, List<Piece> pieces) {
-		for (Piece piece : pieces) {
-			if (piece.getPosition().equals(position)) {
-				return piece;
-			}
-		}
-		return null;
+	public Piece getOccupyingPiece(ChessPosition position, HashMap<ChessPosition, Piece> pieces) {
+		return pieces.get(position);
 	}
 
-	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition, List<Piece> pieces) {
+	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition,
+							  HashMap<ChessPosition, Piece> pieces) {
 		int rankDifference = destinationPosition.getRank() - startingPosition.getRank();
 		int fileDifference = destinationPosition.getFile() - startingPosition.getFile();
 		if (rankDifference == 0) {
@@ -243,14 +243,15 @@ public class Board {
 	}
 
 	public boolean kingInCheck(Piece piece, ChessPosition destinationPosition) {
-		List<Piece> mockPieces = new ArrayList<>(pieces);
-		mockPieces.remove(getOccupyingPiece(destinationPosition, mockPieces));
-		mockPieces.remove(piece);
+		HashMap<ChessPosition, Piece> mockPieces = new HashMap<>(pieces);
+		mockPieces.remove(destinationPosition);
+		mockPieces.remove(piece.getPosition());
 		Piece copyPiece = piece.copy();
 		copyPiece.setPosition(destinationPosition);
-		mockPieces.add(copyPiece);
+		mockPieces.put(copyPiece.getPosition(), copyPiece);
 		King king = null;
-		for (Piece mockPiece : mockPieces) {
+		for (Map.Entry<ChessPosition, Piece> pieceEntry : mockPieces.entrySet()) {
+			Piece mockPiece = pieceEntry.getValue();
 			if (mockPiece.getColor() == turn && mockPiece instanceof King) {
 				king = (King) mockPiece;
 			}
@@ -258,16 +259,17 @@ public class Board {
 		if (king == null) {
 			throw new RuntimeException("No king found");
 		}
-		for (Piece mockPiece : mockPieces) {
+		for (Map.Entry<ChessPosition, Piece> pieceEntry : mockPieces.entrySet()) {
+			Piece mockPiece = pieceEntry.getValue();
 			if (mockPiece.getColor() == turn) {
 				continue;
 			}
 			if (mockPiece instanceof King || mockPiece instanceof Knight) {
 				if (mockPiece.validMovement(king.getPosition())) {
 					if (mockPiece instanceof Knight) {
-						System.out.println("King in check by a knight");
+						System.out.println("King in check by a Knight");
 					} else {
-						System.out.println("King in check by the other king");
+						System.out.println("King restricted by the other king");
 					}
 					return true;
 				}
@@ -283,14 +285,14 @@ public class Board {
 				}
 				if (king.getPosition().getRank() == takeRank) {
 					if (kingFile == takeFileRight || kingFile == takeFileLeft) {
-						System.out.println("King in check by pawn");
+						System.out.println("King in check by a Pawn");
 						return true;
 					}
 				}
 			} else {
 				if (mockPiece.validMovement(king.getPosition())
 						&& emptyPath(mockPiece.getPosition(), king.getPosition(), mockPieces)) {
-					System.out.println("King in check by " + mockPiece.getClass().getName());
+					System.out.println("King in check by a " + mockPiece.getClass().getSimpleName());
 					return true;
 				}
 			}
