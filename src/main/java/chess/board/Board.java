@@ -15,8 +15,6 @@ import javafx.scene.layout.Pane;
 import java.util.HashMap;
 import java.util.Map;
 
-// TODO: Change pieces from an ArrayList to a Matrix
-
 public class Board {
 	@SuppressWarnings("SpellCheckingInspection")
 	private static final String NEW_GAME_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
@@ -132,7 +130,7 @@ public class Board {
 		if (piece.getColor() != turn || !piece.validMovement(destinationPosition)) {
 			return false;
 		}
-		Piece occupyingPiece = getOccupyingPiece(destinationPosition, pieces);
+		Piece occupyingPiece = pieces.get(destinationPosition);
 		if (piece instanceof Pawn) {
 			ChessPosition position = piece.getPosition();
 			int rank = position.getRank();
@@ -196,10 +194,6 @@ public class Board {
 		}
 	}
 
-	public Piece getOccupyingPiece(ChessPosition position, HashMap<ChessPosition, Piece> pieces) {
-		return pieces.get(position);
-	}
-
 	private boolean emptyPath(ChessPosition startingPosition, ChessPosition destinationPosition,
 							  HashMap<ChessPosition, Piece> pieces) {
 		int rankDifference = destinationPosition.getRank() - startingPosition.getRank();
@@ -210,7 +204,7 @@ public class Board {
 			int minFile = Math.min(startingPosition.getFile(), destinationPosition.getFile());
 			int maxFile = Math.max(startingPosition.getFile(), destinationPosition.getFile());
 			for (int file = minFile + 1; file < maxFile; file++) {
-				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
+				if (pieces.get(new ChessPosition(file, rank)) != null) {
 					return false;
 				}
 			}
@@ -221,7 +215,7 @@ public class Board {
 			int minRank = Math.min(startingPosition.getRank(), destinationPosition.getRank());
 			int maxRank = Math.max(startingPosition.getRank(), destinationPosition.getRank());
 			for (int rank = minRank + 1; rank < maxRank; rank++) {
-				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
+				if (pieces.get(new ChessPosition(file, rank)) != null) {
 					return false;
 				}
 			}
@@ -234,7 +228,7 @@ public class Board {
 			for (int i = 1, file = startingPosition.getFile() + fileIncrement, rank = startingPosition.getRank() + rankIncrement;
 				 i < difference - 1;
 				 i++, file += fileIncrement, rank += rankIncrement) {
-				if (getOccupyingPiece(new ChessPosition(file, rank), pieces) != null) {
+				if (pieces.get(new ChessPosition(file, rank)) != null) {
 					return false;
 				}
 			}
